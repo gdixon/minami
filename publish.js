@@ -345,11 +345,11 @@ function buildNav(members) {
   nav.push(buildNavLink('home', '<a href="index.html">Home</a>'))
 
   nav = nav.concat(buildMemberNav(members.tutorials, "Tutorials", seenTutorials, linktoTutorial))
+  nav = nav.concat(buildMemberNav(members.namespaces, "Namespaces", seen, linktoNamespace))
   nav = nav.concat(buildMemberNav(members.classes, "Classes", seen, linkto))
   nav = nav.concat(buildMemberNav(members.modules, "Modules", {}, linkto))
   nav = nav.concat(buildMemberNav(members.externals, "Externals", seen, linktoExternal))
   nav = nav.concat(buildMemberNav(members.events, "Events", seen, linkto))
-  nav = nav.concat(buildMemberNav(members.namespaces, "Namespaces", seen, linkto))
   nav = nav.concat(buildMemberNav(members.mixins, "Mixins", seen, linkto))
   nav = nav.concat(buildMemberNav(members.interfaces, "Interfaces", seen, linkto))
 
@@ -418,7 +418,11 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
               return
             }
 
-            nav.push(buildNavItem(buildNavType(method.kind, linkto(method.longname, method.name))))
+            if (itemHeading === "Namespaces") {
+                nav.push(buildNavItem(buildNavType(method.kind, linktoFn(displayName, method.longname, method.name))))
+            } else {
+                nav.push(buildNavItem(buildNavType(method.kind, linktoFn(method.longname, method.name))))
+            }
           })
         }
 
@@ -428,6 +432,10 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
   }
 
   return nav
+}
+
+function linktoNamespace(holder, longName, name) {
+  return '<a href="'+holder+'.html' + (typeof name !== "undefined" ? '#'+longName : '') + '">' + longName + '</a>';
 }
 
 function linktoTutorial(longName, name) {
