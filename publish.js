@@ -337,12 +337,14 @@ function attachModuleSymbols(doclets, modules) {
  * @param {array<object>} members.interfaces
  * @return {array} The HTML for the navigation sidebar.
  */
-function buildNav(members) {
+function buildNav(members, conf) {
   var nav = []
   var seen = {}
   var seenTutorials = {}
 
-  nav.push(buildNavLink('home', '<a href="index.html">Home</a>'))
+  if (typeof env.conf.extraNavDetails == "undefined") {
+      nav.push(buildNavLink('Home', '<a href="index.html">Home</a>'))
+  }
 
   nav = nav.concat(buildMemberNav(members.tutorials, "Tutorials", seenTutorials, linktoTutorial))
   nav = nav.concat(buildMemberNav(members.namespaces, "Namespaces", seen, linktoNamespace))
@@ -352,6 +354,11 @@ function buildNav(members) {
   nav = nav.concat(buildMemberNav(members.events, "Events", seen, linkto))
   nav = nav.concat(buildMemberNav(members.mixins, "Mixins", seen, linkto))
   nav = nav.concat(buildMemberNav(members.interfaces, "Interfaces", seen, linkto))
+
+  if (typeof env.conf.extraNavDetails !== "undefined") {
+      nav.push(buildNavHeading('Home', '<a href="index.html">Home</a>'))
+      nav = nav.concat(buildMemberNav(env.conf.extraNavDetails, "", seen, linktoReadme))
+  }
 
   if (members.globals.length) {
     nav.push(buildNavHeading(linkto('global', 'Globals')))
@@ -377,7 +384,9 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
   if (items && items.length) {
     var itemsNav = ""
 
-    nav.push(buildNavHeading(itemHeading))
+    if(itemHeading.length > 0) {
+        nav.push(buildNavHeading(itemHeading))
+    }
 
     items.forEach(function(item) {
       var methods = find({ kind: "function", memberof: item.longname })
@@ -385,7 +394,7 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
       var displayName
 
       if (!hasOwnProp.call(item, "longname")) {
-        nav.push(buildNavItem(linkfoFn('', item.name)))
+        nav.push(buildNavItem(linktoFn('', item.name)))
         return
       }
 
@@ -408,8 +417,10 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
 
         if (itemHeading === 'Tutorials') {
           nav.push(buildNavItem(linktoFn(item.longname, displayName)))
+        } else if (itemHeading === '') {
+            nav.push(buildNavItem(buildNavType(item.kind, linktoFn(item.id, item.name))))
         } else {
-          nav.push(buildNavHeading(buildNavType(item.kind, linktoFn(item.longname, displayName))))
+          nav.push(buildNavItem(buildNavType(item.kind, linktoFn(item.longname, displayName))))
         }
 
         if (methods.length) {
@@ -432,6 +443,11 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
   }
 
   return nav
+}
+
+
+function linktoReadme(hash, name) {
+  return '<a href="index.html' + (typeof name !== "undefined" ? '#'+hash : '') + '">' + name + '</a>';
 }
 
 function linktoNamespace(holder, longName, name) {
@@ -704,7 +720,7 @@ exports.publish = function(taffyData, opts, tutorials) {
   view.outputSourceFiles = outputSourceFiles
 
   // once for all
-  view.nav = buildNav(members)
+  view.nav = buildNav(members, conf)
   attachModuleSymbols(find({ longname: { left: "module:" } }), members.modules)
 
   // generate the pretty-printed source files first so other pages can link to them
